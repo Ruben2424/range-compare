@@ -1,7 +1,7 @@
 use std::cmp::Ordering::*;
 use std::ops::Range;
 
-trait RangeExt<T> {
+pub trait RangeExt<T> {
     fn compare(&self, other: &Range<T>) -> RangeCmpResult<T>;
 }
 
