@@ -1,3 +1,30 @@
+//! # Range Compare
+//!
+//! This crate provides a method to compare two ranges and get the overlapping parts of the ranges.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use range_compare::{RangeExt, RangeCmpResult};
+//!
+//! // create two ranges
+//! let range1 = 2..10;
+//! let range2 = 5..15;
+//! 
+//! // compare the original range1 with the other range2
+//! // safe the [RangeCmpResult] of the comparison in a variable
+//! let result = range1.compare(&range2);
+//! 
+//! assert_eq!(
+//!     result,
+//!     RangeCmpResult::EndIncluded {
+//!       other_after: 10..15,
+//!       original_part_which_is_not_included: 2..5,
+//!       overlapping_part: 5..10,
+//!   }
+//! );
+//! ```
+
 use std::cmp::Ordering::*;
 use std::ops::Range;
 
@@ -72,7 +99,7 @@ where
 }
 
 /// Result of the comparison of two ranges
-/// 
+///
 /// This enum contains all possible results of the comparison of two ranges.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RangeCmpResult<T> {
@@ -133,7 +160,7 @@ pub enum RangeCmpResult<T> {
 
 impl<T> RangeCmpResult<T> {
     /// Get the matching part of the original range
-    /// 
+    ///
     /// This method returns the part of the original range which is matching the other range.
     pub fn get_matching_part(&self) -> Option<&Range<T>> {
         match self {
