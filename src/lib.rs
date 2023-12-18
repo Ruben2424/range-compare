@@ -1,14 +1,20 @@
 use std::cmp::Ordering::*;
 use std::ops::Range;
 
+/// Extension trait for ranges
+///
+/// This trait provides a method to compare two ranges and get the result of the comparison.
 pub trait RangeExt<T> {
+    /// Compare two ranges and get the [RangeCmpResult] of the comparison
     fn compare(&self, other: &Range<T>) -> RangeCmpResult<T>;
 }
 
+/// Implementation of the [RangeExt] trait for all types which implement Ord, Eq and Copy
 impl<T> RangeExt<T> for Range<T>
 where
     T: Ord + Eq + Copy,
 {
+    /// Compare two ranges and get the [RangeCmpResult] of the comparison
     fn compare(&self, other: &Range<T>) -> RangeCmpResult<T> {
         if self.is_empty() || other.is_empty() {
             // when empty always not included
@@ -65,45 +71,60 @@ where
     }
 }
 
+/// Result of the comparison of two ranges
+/// 
+/// This enum contains all possible results of the comparison of two ranges.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RangeCmpResult<T> {
+    /// The ranges have the same `start` and `end` values
     CompletelyTheSame,
+    /// The ranges are not overlapping and the range is below the other one
     NotIncludedBelow,
+    /// The ranges are not overlapping and the range is above the other one
     NotIncludedAbove,
+    /// One range is empty
     RangeEmpty,
+    /// The range is completely included in the other one
     CompletelyIncluded {
         other_before: Range<T>,
         other_after: Range<T>,
         overlapping_part: Range<T>,
     },
+    /// The end of the range is included in the other one
     EndIncluded {
         // The "rest" from the other range which is not included on the original one
         other_after: Range<T>,
         original_part_which_is_not_included: Range<T>,
         overlapping_part: Range<T>,
     },
+    /// The start of the range is included in the other one
     StartIncluded {
         other_before: Range<T>,
         original_part_which_is_not_included: Range<T>,
         overlapping_part: Range<T>,
     },
+    /// The middle of the range is included in the other one
     MiddleIncluded {
         overlapping: Range<T>,
         original_before_not_included: Range<T>,
         original_after_not_included: Range<T>,
     },
+    /// The start of the range is the same as the start of the other range and the range is shorter
     SameStartOriginalShorter {
         original_included_part: Range<T>,
         other_after_not_included: Range<T>,
     },
+    /// The start of the range is the same as the start of the other range and the other range is shorter
     SameStartOtherShorter {
         original_included_part: Range<T>,
         original_after_not_included: Range<T>,
     },
+    /// The end of the range is the same as the end of the other range and the range is shorter
     SameEndOriginalShorter {
         original_included_part: Range<T>,
         other_before_not_included: Range<T>,
     },
+    /// The end of the range is the same as the end of the other range and the other range is shorter
     SameEndOtherShorter {
         original_included_part: Range<T>,
         original_before_not_included: Range<T>,
@@ -111,6 +132,9 @@ pub enum RangeCmpResult<T> {
 }
 
 impl<T> RangeCmpResult<T> {
+    /// Get the matching part of the original range
+    /// 
+    /// This method returns the part of the original range which is matching the other range.
     pub fn get_matching_part(&self) -> Option<&Range<T>> {
         match self {
             RangeCmpResult::RangeEmpty => None,
@@ -157,6 +181,7 @@ impl<T> RangeCmpResult<T> {
         }
     }
 
+    /// Get the parts of the original range which are not matching the other range
     pub fn get_original_not_matching_parts(&self) -> [Option<&Range<T>>; 2] {
         match self {
             RangeCmpResult::CompletelyTheSame => [None, None],
