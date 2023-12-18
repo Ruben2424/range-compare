@@ -25,7 +25,7 @@ where
             // Greater or Equal because the range is exclusive above
             (_, _, Greater | Equal, _) => RangeCmpResult::NotIncluded,
             (_, _, _, Less | Equal) => RangeCmpResult::NotIncluded,
-            (Less, Less, _, _) => RangeCmpResult::EndIndluded {
+            (Less, Less, _, _) => RangeCmpResult::EndIncluded {
                 other_after: self.end..other.end,
                 original_part_which_is_not_included: self.start..other.start,
                 overlapping_part: other.start..self.end,
@@ -74,7 +74,7 @@ pub enum RangeCmpResult<T> {
         other_after: Range<T>,
         overlapping_part: Range<T>,
     },
-    EndIndluded {
+    EndIncluded {
         // The "rest" from the other range which is not included on the original one
         other_after: Range<T>,
         original_part_which_is_not_included: Range<T>,
@@ -118,7 +118,7 @@ impl<T> RangeCmpResult<T> {
                 other_after: _,
                 overlapping_part: original_included_part,
             } => Some(original_included_part),
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 // The "rest" from the other range which is not included on the original one
                 other_after: _,
                 original_part_which_is_not_included: _,
@@ -163,7 +163,7 @@ impl<T> RangeCmpResult<T> {
                 other_after: _,
                 overlapping_part: _,
             } => [None, None],
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 // The "rest" from the other range which is not included on the original one
                 other_after: _,
                 original_part_which_is_not_included,
@@ -214,7 +214,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -229,7 +229,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -244,7 +244,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -259,7 +259,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -274,7 +274,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -289,7 +289,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -304,7 +304,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -319,7 +319,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -334,7 +334,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -349,7 +349,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 10..15,
                 original_part_which_is_not_included: 2..5,
                 overlapping_part: 5..10,
@@ -397,7 +397,7 @@ mod tests {
         let result = range1.compare(&range2);
         assert_eq!(
             result,
-            RangeCmpResult::EndIndluded {
+            RangeCmpResult::EndIncluded {
                 other_after: 9..10,
                 original_part_which_is_not_included: 1..2,
                 overlapping_part: 2..9,
