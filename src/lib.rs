@@ -12,7 +12,7 @@ where
     fn compare(&self, other: &Range<T>) -> RangeCmpResult<T> {
         if self.is_empty() || other.is_empty() {
             // when empty always not included
-            return RangeCmpResult::NotIncluded;
+            return RangeCmpResult::RangeEmpty;
         }
 
         match (
@@ -23,8 +23,8 @@ where
         ) {
             (Equal, Equal, _, _) => RangeCmpResult::CompletelyTheSame,
             // Greater or Equal because the range is exclusive above
-            (_, _, Greater | Equal, _) => RangeCmpResult::NotIncluded,
-            (_, _, _, Less | Equal) => RangeCmpResult::NotIncluded,
+            (_, _, Greater | Equal, _) => RangeCmpResult::NotIncludedAbove,
+            (_, _, _, Less | Equal) => RangeCmpResult::NotIncludedBelow,
             (Less, Less, _, _) => RangeCmpResult::EndIncluded {
                 other_after: self.end..other.end,
                 original_part_which_is_not_included: self.start..other.start,
@@ -68,7 +68,9 @@ where
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RangeCmpResult<T> {
     CompletelyTheSame,
-    NotIncluded,
+    NotIncludedBelow,
+    NotIncludedAbove,
+    RangeEmpty,
     CompletelyIncluded {
         other_before: Range<T>,
         other_after: Range<T>,
@@ -111,8 +113,10 @@ pub enum RangeCmpResult<T> {
 impl<T> RangeCmpResult<T> {
     pub fn get_matching_part(&self) -> Option<&Range<T>> {
         match self {
+            RangeCmpResult::RangeEmpty => None,
             RangeCmpResult::CompletelyTheSame => None,
-            RangeCmpResult::NotIncluded => None,
+            RangeCmpResult::NotIncludedBelow => None,
+            RangeCmpResult::NotIncludedAbove => None,
             RangeCmpResult::CompletelyIncluded {
                 other_before: _,
                 other_after: _,
@@ -156,7 +160,9 @@ impl<T> RangeCmpResult<T> {
     pub fn get_original_not_matching_parts(&self) -> [Option<&Range<T>>; 2] {
         match self {
             RangeCmpResult::CompletelyTheSame => [None, None],
-            RangeCmpResult::NotIncluded => [None, None],
+            RangeCmpResult::NotIncludedBelow => [None, None],
+            RangeCmpResult::RangeEmpty => [None, None],
+            RangeCmpResult::NotIncludedAbove => [None, None],
             // range is completely included, so there is no part which is not included
             RangeCmpResult::CompletelyIncluded {
                 other_before: _,
@@ -360,6 +366,30 @@ mod tests {
     // Test all possible results with just one Type
 
     #[test]
+    fn test_range_empty() {
+        let range1 = 2..2;
+        let range2 = 5..15;
+        let result = range1.compare(&range2);
+        assert_eq!(result, RangeCmpResult::RangeEmpty);
+    }
+
+    #[test]
+    fn test_range_empty2() {
+        let range1 = 5..2;
+        let range2 = 5..15;
+        let result = range1.compare(&range2);
+        assert_eq!(result, RangeCmpResult::RangeEmpty);
+    }
+
+    #[test]
+    fn test_range_empty3() {
+        let range1 = 5..20;
+        let range2 = 25..15;
+        let result = range1.compare(&range2);
+        assert_eq!(result, RangeCmpResult::RangeEmpty);
+    }
+
+    #[test]
     fn test_completely_the_same() {
         let range1 = 2..10;
         let range2 = 2..10;
@@ -372,7 +402,15 @@ mod tests {
         let range1 = 2..10;
         let range2 = 11..15;
         let result = range1.compare(&range2);
-        assert_eq!(result, RangeCmpResult::NotIncluded);
+        assert_eq!(result, RangeCmpResult::NotIncludedBelow);
+    }
+
+    #[test]
+    fn test_not_included_above() {
+        let range1 = 11..15;
+        let range2 = 2..10;
+        let result = range1.compare(&range2);
+        assert_eq!(result, RangeCmpResult::NotIncludedAbove);
     }
 
     #[test]
