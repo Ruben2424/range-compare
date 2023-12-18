@@ -2,7 +2,7 @@
 //!
 //! This crate provides a method to compare two ranges and get the overlapping parts of the ranges.
 //!
-//! ## Example
+//! ## Compare two ranges
 //!
 //! ```rust
 //! use range_compare::{RangeExt, RangeCmpResult};
@@ -10,11 +10,11 @@
 //! // create two ranges
 //! let range1 = 2..10;
 //! let range2 = 5..15;
-//! 
+//!
 //! // compare the original range1 with the other range2
 //! // safe the [RangeCmpResult] of the comparison in a variable
 //! let result = range1.compare(&range2);
-//! 
+//!
 //! assert_eq!(
 //!     result,
 //!     RangeCmpResult::EndIncluded {
@@ -24,6 +24,28 @@
 //!   }
 //! );
 //! ```
+//!
+//! ## Get the matching part of the original range
+//!
+//! ```rust
+//! use range_compare::{RangeExt, RangeCmpResult};
+//!
+//! // create two ranges
+//! let range1 = 29..40;
+//! let range2 = 35..70;
+//!
+//! // compare the original range1 with the other range2
+//! // safe the [RangeCmpResult] of the comparison in a variable
+//! let result = range1.compare(&range2);
+//!
+//! // get the matching part of the original range
+//! let matching_part = result.get_matching_part();
+//!
+//! assert_eq!(matching_part, Some(35..40).as_ref());
+//!
+//! ```
+//!
+//! Check the [RangeCmpResult] documentation for more information about the possible results of the comparison.
 
 use std::cmp::Ordering::*;
 use std::ops::Range;
@@ -69,7 +91,7 @@ where
                 overlapping_part: self.start..other.end,
             },
             (Less, Greater, _, _) => RangeCmpResult::MiddleIncluded {
-                overlapping: other.start..other.end,
+                overlapping_part: other.start..other.end,
                 original_before_not_included: self.start..other.start,
                 original_after_not_included: other.end..self.end,
             },
@@ -79,19 +101,19 @@ where
                 overlapping_part: self.start..self.end,
             },
             (Equal, Less, _, _) => RangeCmpResult::SameStartOriginalShorter {
-                original_included_part: self.start..self.end,
+                overlapping_part: self.start..self.end,
                 other_after_not_included: self.end..other.end,
             },
             (Equal, Greater, _, _) => RangeCmpResult::SameStartOtherShorter {
-                original_included_part: other.start..other.end,
+                overlapping_part: other.start..other.end,
                 original_after_not_included: other.end..self.end,
             },
             (Less, Equal, _, _) => RangeCmpResult::SameEndOtherShorter {
-                original_included_part: other.start..other.end,
+                overlapping_part: other.start..other.end,
                 original_before_not_included: self.start..other.start,
             },
             (Greater, Equal, _, _) => RangeCmpResult::SameEndOriginalShorter {
-                original_included_part: self.start..self.end,
+                overlapping_part: self.start..self.end,
                 other_before_not_included: other.start..self.start,
             },
         }
@@ -104,56 +126,259 @@ where
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RangeCmpResult<T> {
     /// The ranges have the same `start` and `end` values
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 2..10;
+    /// let range2 = 2..10;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(result, RangeCmpResult::CompletelyTheSame);
+    /// ```
     CompletelyTheSame,
+
     /// The ranges are not overlapping and the range is below the other one
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 2..10;
+    /// let range2 = 11..15;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(result, RangeCmpResult::NotIncludedBelow);
+    /// ```
     NotIncludedBelow,
+
     /// The ranges are not overlapping and the range is above the other one
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 11..15;
+    /// let range2 = 2..10;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(result, RangeCmpResult::NotIncludedAbove);
+    /// ```
     NotIncludedAbove,
+
     /// One range is empty
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 2..2;
+    /// let range2 = 5..15;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(result, RangeCmpResult::RangeEmpty);
+    /// ```
     RangeEmpty,
+
     /// The range is completely included in the other one
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 5..7;
+    /// let range2 = 1..11;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    RangeCmpResult::CompletelyIncluded {
+    ///       other_before: 1..5,
+    ///       other_after: 7..11,
+    ///       overlapping_part: 5..7,
+    ///   }
+    /// );
+    /// ```
     CompletelyIncluded {
         other_before: Range<T>,
         other_after: Range<T>,
         overlapping_part: Range<T>,
     },
+
     /// The end of the range is included in the other one
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 1..9;
+    /// let range2 = 7..10;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///   result,
+    ///   RangeCmpResult::EndIncluded {
+    ///     other_after: 9..10,
+    ///     original_part_which_is_not_included: 1..7,
+    ///     overlapping_part: 7..9,
+    /// }
+    /// );
+    /// ```
     EndIncluded {
         // The "rest" from the other range which is not included on the original one
         other_after: Range<T>,
         original_part_which_is_not_included: Range<T>,
         overlapping_part: Range<T>,
     },
+
     /// The start of the range is included in the other one
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 4..15;
+    /// let range2 = 1..9;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    RangeCmpResult::StartIncluded {
+    ///       other_before: 1..4,
+    ///       original_part_which_is_not_included: 9..15,
+    ///       overlapping_part: 4..9,
+    ///    }
+    /// );
     StartIncluded {
         other_before: Range<T>,
         original_part_which_is_not_included: Range<T>,
         overlapping_part: Range<T>,
     },
+
     /// The middle of the range is included in the other one
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 1..20;
+    /// let range2 = 4..15;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    RangeCmpResult::MiddleIncluded {
+    ///       overlapping_part: 4..15,
+    ///       original_before_not_included: 1..4,
+    ///       original_after_not_included: 15..20,
+    ///    }
+    /// );
+    /// ```
     MiddleIncluded {
-        overlapping: Range<T>,
+        overlapping_part: Range<T>,
         original_before_not_included: Range<T>,
         original_after_not_included: Range<T>,
     },
+
     /// The start of the range is the same as the start of the other range and the range is shorter
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 1..10;
+    /// let range2 = 1..15;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///   result,
+    ///   RangeCmpResult::SameStartOriginalShorter {
+    ///     overlapping_part: 1..10,
+    ///     other_after_not_included: 10..15,
+    ///   }
+    /// );
     SameStartOriginalShorter {
-        original_included_part: Range<T>,
+        overlapping_part: Range<T>,
         other_after_not_included: Range<T>,
     },
+
     /// The start of the range is the same as the start of the other range and the other range is shorter
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 1..15;
+    /// let range2 = 1..10;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    RangeCmpResult::SameStartOtherShorter {
+    ///       overlapping_part: 1..10,
+    ///       original_after_not_included: 10..15,
+    ///    }
+    /// );
+    /// ```
     SameStartOtherShorter {
-        original_included_part: Range<T>,
+        overlapping_part: Range<T>,
         original_after_not_included: Range<T>,
     },
+
     /// The end of the range is the same as the end of the other range and the range is shorter
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 5..15;
+    /// let range2 = 1..15;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    RangeCmpResult::SameEndOriginalShorter {
+    ///       overlapping_part: 5..15,
+    ///       other_before_not_included: 1..5,
+    ///    }
+    /// );
     SameEndOriginalShorter {
-        original_included_part: Range<T>,
+        overlapping_part: Range<T>,
         other_before_not_included: Range<T>,
     },
+
     /// The end of the range is the same as the end of the other range and the other range is shorter
+    ///
+    /// ```rust
+    /// use range_compare::{RangeExt, RangeCmpResult};
+    /// use std::ops::Range;
+    ///
+    /// let range1 = 1..15;
+    /// let range2 = 5..15;
+    ///
+    /// let result = range1.compare(&range2);
+    ///
+    /// assert_eq!(
+    ///    result,
+    ///    RangeCmpResult::SameEndOtherShorter {
+    ///       overlapping_part: 5..15,
+    ///       original_before_not_included: 1..5,
+    ///    }
+    /// );
     SameEndOtherShorter {
-        original_included_part: Range<T>,
+        overlapping_part: Range<T>,
         original_before_not_included: Range<T>,
     },
 }
@@ -185,24 +410,24 @@ impl<T> RangeCmpResult<T> {
                 overlapping_part: original_included_part,
             } => Some(original_included_part),
             RangeCmpResult::MiddleIncluded {
-                overlapping: original_included_part,
+                overlapping_part: original_included_part,
                 original_before_not_included: _,
                 original_after_not_included: _,
             } => Some(original_included_part),
             RangeCmpResult::SameStartOriginalShorter {
-                original_included_part,
+                overlapping_part: original_included_part,
                 other_after_not_included: _,
             } => Some(original_included_part),
             RangeCmpResult::SameStartOtherShorter {
-                original_included_part,
+                overlapping_part: original_included_part,
                 original_after_not_included: _,
             } => Some(original_included_part),
             RangeCmpResult::SameEndOriginalShorter {
-                original_included_part,
+                overlapping_part: original_included_part,
                 other_before_not_included: _,
             } => Some(original_included_part),
             RangeCmpResult::SameEndOtherShorter {
-                original_included_part,
+                overlapping_part: original_included_part,
                 original_before_not_included: _,
             } => Some(original_included_part),
         }
@@ -233,7 +458,7 @@ impl<T> RangeCmpResult<T> {
                 overlapping_part: _,
             } => [Some(original_part_which_is_not_included), None],
             RangeCmpResult::MiddleIncluded {
-                overlapping: _,
+                overlapping_part: _,
                 original_before_not_included,
                 original_after_not_included,
             } => [
@@ -241,19 +466,19 @@ impl<T> RangeCmpResult<T> {
                 Some(original_after_not_included),
             ],
             RangeCmpResult::SameStartOriginalShorter {
-                original_included_part: _,
+                overlapping_part: _,
                 other_after_not_included: _,
             } => [None, None],
             RangeCmpResult::SameStartOtherShorter {
-                original_included_part: _,
+                overlapping_part: _,
                 original_after_not_included,
             } => [Some(original_after_not_included), None],
             RangeCmpResult::SameEndOriginalShorter {
-                original_included_part: _,
+                overlapping_part: _,
                 other_before_not_included: _,
             } => [None, None],
             RangeCmpResult::SameEndOtherShorter {
-                original_included_part: _,
+                overlapping_part: _,
                 original_before_not_included,
             } => [Some(original_before_not_included), None],
         }
@@ -518,7 +743,7 @@ mod tests {
         assert_eq!(
             result,
             RangeCmpResult::MiddleIncluded {
-                overlapping: 4..15,
+                overlapping_part: 4..15,
                 original_before_not_included: 1..4,
                 original_after_not_included: 15..20,
             }
@@ -533,7 +758,7 @@ mod tests {
         assert_eq!(
             result,
             RangeCmpResult::SameStartOriginalShorter {
-                original_included_part: 1..10,
+                overlapping_part: 1..10,
                 other_after_not_included: 10..15,
             }
         );
@@ -547,7 +772,7 @@ mod tests {
         assert_eq!(
             result,
             RangeCmpResult::SameStartOtherShorter {
-                original_included_part: 1..10,
+                overlapping_part: 1..10,
                 original_after_not_included: 10..15,
             }
         );
@@ -561,7 +786,7 @@ mod tests {
         assert_eq!(
             result,
             RangeCmpResult::SameEndOriginalShorter {
-                original_included_part: 5..15,
+                overlapping_part: 5..15,
                 other_before_not_included: 1..5,
             }
         );
@@ -575,9 +800,18 @@ mod tests {
         assert_eq!(
             result,
             RangeCmpResult::SameEndOtherShorter {
-                original_included_part: 5..15,
+                overlapping_part: 5..15,
                 original_before_not_included: 1..5,
             }
         );
+    }
+
+    #[test]
+    fn test_get_matching_part() {
+        let range1 = 29..40;
+        let range2 = 35..70;
+        let result = range1.compare(&range2);
+        let matching_part = result.get_matching_part();
+        assert_eq!(matching_part, Some(35..40).as_ref());
     }
 }
