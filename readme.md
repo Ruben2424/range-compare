@@ -1,9 +1,6 @@
 # range-compare
 This crate provides a method to compare two ranges and get the overlapping parts of the ranges.
 
-# Status
-This crate is not yet published on [crates.io](https://crates.io/)
-
 # Examples
  ```rust
 use range_compare::{RangeExt, RangeCmpResult};
