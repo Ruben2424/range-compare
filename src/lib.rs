@@ -72,7 +72,7 @@ where
 
         match (
             self.start.cmp(&other.start),
-            self.end.cmp(&other.end),
+                self.end.cmp(&other.end),
             self.start.cmp(&other.end),
             self.end.cmp(&other.start),
         ) {
