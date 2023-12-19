@@ -66,7 +66,6 @@ where
     /// Compare two ranges and get the [RangeCmpResult] of the comparison
     fn compare(&self, other: &Range<T>) -> RangeCmpResult<T> {
         if self.is_empty() || other.is_empty() {
-            // when empty always not included
             return RangeCmpResult::RangeEmpty;
         }
 
